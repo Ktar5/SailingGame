@@ -6,72 +6,81 @@ public class TopDown2DPlayer : MonoBehaviour {
 
 	/*
 	====================================================================================================
-	MOVEMENT
+	VARIABLES
 	====================================================================================================
+	*/
+
+	/*
+	<<<COMPONENTS>>>
+	*/
+
+	SpriteRenderer spriteRenderer;
+
+	/*
+	<<<MOVEMENT>>>
 	*/
 
 	/*
 	Polar Directions:
-	Polar angles laid out like E=0, N=90, W=180, S=270
+	Polar angles laid out like E=0 - 45 - N=90 - 135 - W=180 - 225 - S=270
 	*/
-	public enum Direction {EAST, NORTH, WEST, SOUTH};
-	public Direction direction = Direction.EAST;
+	public enum Direction {
+		EAST,
+		NORTHEAST,
+		NORTH,
+		NORTHWEST,
+		WEST,
+		SOUTHWEST,
+		SOUTH,
+		SOUTHEAST
+	}
+
+	[System.Serializable]
+	public class Movement {
+	
+		public Direction direction = Direction.EAST;
+		public float speed;
+
+	}
+	
+	public Movement movement;
+	
+	/*
+	<<<INPUT>>>
+	*/
 
 	/*
-	Player States:
-	Change the state from STANDARD to CUTSCENE in order to manually change the player direction
-	*/
-
-	public enum PlayerState {STANDARD, CUTSCENE};
-	public PlayerState playerState = PlayerState.STANDARD;
-
-	/*
-	Input:
 	Mouse for direction. Keys for movement. Potential joystick support is easily implemented.
 	*/
-	Vector2 mousePos;
-	Vector2 moveAxes;
+	
+	[System.Serializable]
+	public class KeyboardInput {
+		public Vector2 mousePos;
+		public Vector2 moveAxes;
+	}
 
-	/*
-	Movement:
-	Statistics for movement.
-	*/
-
-	public float speed;
+	public KeyboardInput input;
+	Camera cam;
 
 	/*
 	====================================================================================================
-	ANIMATION
+	METHODS
 	====================================================================================================
-	*/
-	private Animator animator;
-
-	/*
-	Start:
-	ran first frame
 	*/
 
 	void Start() {
-		animator = GetComponent<Animator> ();
+		cam = Camera.main;
+		spriteRenderer = GetComponent<SpriteRenderer> ();
 	}
 
-	/*
-	Update:
-	Ran every frame
-	*/
 	void Update() {
-		UpdateInput();
-		Move();
-		Rotate();
-	}
 
-	void UpdateAnimator() {
+		spriteRenderer.color = ColorFromDirection (movement.direction);
 
-		animator.SetBool ("facing_RIGHT" , direction == Direction.WEST  );
-		animator.SetBool ("facing_UP"    , direction == Direction.NORTH );
-		animator.SetBool ("facing_LEFT"  , direction == Direction.EAST  );
-		animator.SetBool ("facing_SOUTH" , direction == Direction.SOUTH );
-		animator.SetBool ("moving", moveAxes.sqrMagnitude > 0.0f);
+		UpdateInput ();
+		Move ();
+		Rotate ();
+
 	}
 
 	/*
@@ -80,12 +89,12 @@ public class TopDown2DPlayer : MonoBehaviour {
 	*/
 	void UpdateInput() {
 		/*I’m using 4-Quadrant vector here rather than Quadrant 1 because it helps with the trigonometry*/
-		mousePos = new Vector2(
-			Input.mousePosition.x - Screen.width/2,
-			Input.mousePosition.y - Screen.height/2
-		);
+		input.mousePos = cam.ScreenToWorldPoint(new Vector2(
+			Input.mousePosition.x,
+			Input.mousePosition.y
+		));
 
-		moveAxes = new Vector2 (
+		input.moveAxes = new Vector2 (
 			Input.GetAxisRaw ("Horizontal"),
 			Input.GetAxisRaw ("Vertical")
 		);
@@ -96,7 +105,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 	Move the player based on axis input
 	*/
 	void Move() {
-		transform.position += new Vector3(moveAxes.x, moveAxes.y, 0.0f) * speed * Time.deltaTime;
+		transform.position += new Vector3(input.moveAxes.x, input.moveAxes.y, 0.0f) * movement.speed * Time.deltaTime;
 	}
 
 	/*
@@ -104,32 +113,68 @@ public class TopDown2DPlayer : MonoBehaviour {
 	Rotate the player based on mouse position
 	*/
 	void Rotate() {
-		float angle = (180.0f + Mathf.Atan2(mousePos.x, mousePos.y) * Mathf.Rad2Deg);
-		direction = Angle2Direction(angle);
+
+		Vector2 relativePoint = new Vector2 (transform.position.x - input.mousePos.x, transform.position.y - input.mousePos.y);
+
+		float angle = (180.0f + Mathf.Atan2(relativePoint.y, relativePoint.x) * Mathf.Rad2Deg);
+		movement.direction = Angle2Direction(angle);
 
 	}
 
-	/*
-	Angle2Direction:
-	Return an enumerated direction based on a degree-angle.
-	@param angle angle (in degrees) to input
-	@return the enumerated direction
-	*/
 	Direction Angle2Direction(float angle) {
 
-		int temp = (int) Mathf.Round(angle / 90.0f);
-		temp = (temp >= 4? 0 : temp);
-		temp = (temp < 0 ? 0 : temp);
-		switch(temp) {
+		int cardinal = (int) Mathf.Round(angle / 45.0f);
+
+		Debug.Log (angle + " " + cardinal%7);
+
+		return CardinalInteger2Direction (cardinal);
+
+	}
+
+	Direction CardinalInteger2Direction(int card) {
+		switch (card) {
 		default:
 		case 0:
-			return Direction.SOUTH;
-		case 1:
 			return Direction.EAST;
+		case 1:
+			return Direction.NORTHEAST;
 		case 2:
 			return Direction.NORTH;
 		case 3:
+			return Direction.NORTHWEST;
+		case 4:
 			return Direction.WEST;
+		case 5:
+			return Direction.SOUTHWEST;
+		case 6:
+			return Direction.SOUTH;
+		case 7:
+			return Direction.SOUTHEAST;
+		}
+	}
+
+	Color ColorFromDirection(Direction direction) {
+
+		switch (direction) {
+
+		default:
+		case Direction.EAST:
+			return Color.red;
+		case Direction.NORTHEAST:
+			return Color.yellow;
+		case Direction.NORTH:
+			return Color.green;
+		case Direction.NORTHWEST:
+			return Color.blue;
+		case Direction.WEST:
+			return Color.magenta;
+		case Direction.SOUTHWEST:
+			return Color.cyan;
+		case Direction.SOUTH:
+			return Color.gray;
+		case Direction.SOUTHEAST:
+			return Color.black;
+
 		}
 
 	}
