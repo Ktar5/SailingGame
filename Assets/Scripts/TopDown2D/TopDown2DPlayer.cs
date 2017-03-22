@@ -15,6 +15,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 	*/
 
 	SpriteRenderer spriteRenderer;
+	Animator animator;
 
 	/*
 	<<<MOVEMENT>>>
@@ -71,20 +72,19 @@ public class TopDown2DPlayer : MonoBehaviour {
 	void Start() {
 		cam = Camera.main;
 		spriteRenderer = GetComponent<SpriteRenderer> ();
+		animator = GetComponent<Animator> ();
 	}
 
 	void Update() {
-
-		spriteRenderer.color = ColorFromDirection (movement.direction);
-
 		UpdateInput ();
 		Move ();
 		Rotate ();
+		spriteRenderer.color = ColorFromDirection (movement.direction);
 
 	}
 
 	/*
-	UpdateInput:
+	UPDATE INPUT
 	Update the mouse and movement inputs
 	*/
 	void UpdateInput() {
@@ -99,9 +99,9 @@ public class TopDown2DPlayer : MonoBehaviour {
 			Input.GetAxisRaw ("Vertical")
 		);
 	}
-
+		
 	/*
-	Move:
+	MOVE
 	Move the player based on axis input
 	*/
 	void Move() {
@@ -109,7 +109,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 	}
 
 	/*
-	Rotate:
+	ROTATE
 	Rotate the player based on mouse position
 	*/
 	void Rotate() {
@@ -117,21 +117,27 @@ public class TopDown2DPlayer : MonoBehaviour {
 		Vector2 relativePoint = new Vector2 (transform.position.x - input.mousePos.x, transform.position.y - input.mousePos.y);
 
 		float angle = (180.0f + Mathf.Atan2(relativePoint.y, relativePoint.x) * Mathf.Rad2Deg);
-		movement.direction = Angle2Direction(angle);
+
+		float cardinal = (int) Mathf.Round(angle / 45.0f);
+
+		cardinal = cardinal % 8;
+
+		movement.direction = Cardinal2Direction((int) cardinal);
+
+
+		Animate ((int) cardinal);
 
 	}
 
-	Direction Angle2Direction(float angle) {
-
-		int cardinal = (int) Mathf.Round(angle / 45.0f);
-
-		Debug.Log (angle + " " + cardinal%7);
-
-		return CardinalInteger2Direction (cardinal);
-
+	/*
+	ANIMATE
+	Set animator values
+	*/
+	void Animate(float cardinal) {
+		animator.SetFloat ("cardinal", cardinal);
 	}
 
-	Direction CardinalInteger2Direction(int card) {
+	Direction Cardinal2Direction(int card) {
 		switch (card) {
 		default:
 		case 0:
@@ -153,6 +159,10 @@ public class TopDown2DPlayer : MonoBehaviour {
 		}
 	}
 
+	/*
+	COLOR FROM DIRECTION
+	Quick function to test the directions
+	*/
 	Color ColorFromDirection(Direction direction) {
 
 		switch (direction) {
@@ -173,7 +183,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 		case Direction.SOUTH:
 			return Color.gray;
 		case Direction.SOUTHEAST:
-			return Color.black;
+			return Color.white;
 
 		}
 
