@@ -79,8 +79,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 		UpdateInput ();
 		Move ();
 		Rotate ();
-		spriteRenderer.color = ColorFromDirection (movement.direction);
-
+		Animate ();
 	}
 
 	/*
@@ -114,29 +113,30 @@ public class TopDown2DPlayer : MonoBehaviour {
 	*/
 	void Rotate() {
 
-		Vector2 relativePoint = new Vector2 (transform.position.x - input.mousePos.x, transform.position.y - input.mousePos.y);
-
-		float angle = (180.0f + Mathf.Atan2(relativePoint.y, relativePoint.x) * Mathf.Rad2Deg);
-
-		float cardinal = (int) Mathf.Round(angle / 45.0f);
-
-		cardinal = cardinal % 8;
-
-		movement.direction = Cardinal2Direction((int) cardinal);
-
-
-		Animate ((int) cardinal);
-
+		if (Input.GetButton ("Fire1")) {
+			Vector2 relativePoint = new Vector2 (transform.position.x - input.mousePos.x, transform.position.y - input.mousePos.y);
+			float angle = (180.0f + Mathf.Atan2 (relativePoint.y, relativePoint.x) * Mathf.Rad2Deg);
+			float cardinal = (int)Mathf.Round (angle / 45.0f);
+			cardinal = cardinal % 8;
+			movement.direction = Cardinal2Direction ((int)cardinal);
+		} else {
+			movement.direction = DirectionFromAxis();
+		}
 	}
 
 	/*
 	ANIMATE
 	Set animator values
 	*/
-	void Animate(float cardinal) {
-		animator.SetFloat ("cardinal", cardinal);
+	void Animate() {
+		animator.SetFloat ("cardinal", Direction2Cardinal(movement.direction));
 	}
 
+
+	/*
+	CARDINAL TO DIRECTION
+	Convert a cardinal integer from 0-8
+	*/
 	Direction Cardinal2Direction(int card) {
 		switch (card) {
 		default:
@@ -157,6 +157,59 @@ public class TopDown2DPlayer : MonoBehaviour {
 		case 7:
 			return Direction.SOUTHEAST;
 		}
+	}
+
+	/*
+	DIRECTION FROM AXIS
+	Get a direction from a keypress axis
+	*/
+
+	Direction DirectionFromAxis() {
+		if (input.moveAxes == Vector2.right)
+			return Direction.EAST;
+		else if (input.moveAxes == -1 * Vector2.right)
+			return Direction.WEST;
+		else if (input.moveAxes == Vector2.up)
+			return Direction.NORTH;
+		else if (input.moveAxes == -1 * Vector2.up)
+			return Direction.SOUTH;
+		else if (input.moveAxes == Vector2.up + Vector2.right)
+			return Direction.NORTHEAST;
+		else if (input.moveAxes == (-1 * Vector2.up) + Vector2.right)
+			return Direction.SOUTHEAST;
+		else if (input.moveAxes == Vector2.up + (-1 * Vector2.right))
+			return Direction.NORTHWEST;
+		else if (input.moveAxes == (-1 * Vector2.up) + (-1 * Vector2.right))
+			return Direction.SOUTHWEST;
+		else {
+			return movement.direction;
+		}
+	}
+
+	int Direction2Cardinal(Direction direction) {
+
+		switch (direction) {
+
+			default:
+			case Direction.EAST:
+			return 0;
+			case Direction.NORTHEAST:
+			return 1;
+			case Direction.NORTH:
+			return 2;
+			case Direction.NORTHWEST:
+			return 3;
+			case Direction.WEST:
+			return 4;
+			case Direction.SOUTHWEST:
+			return 5;
+			case Direction.SOUTH:
+			return 6;
+			case Direction.SOUTHEAST:
+			return 7;
+
+		}
+
 	}
 
 	/*
