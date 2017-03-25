@@ -13,7 +13,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 	/*
 	<<<COMPONENTS>>>
 	*/
-
+	Rigidbody2D rigidbody;
 	SpriteRenderer spriteRenderer;
 	Animator animator;
 
@@ -40,7 +40,8 @@ public class TopDown2DPlayer : MonoBehaviour {
 	public class Movement {
 	
 		public Direction direction = Direction.EAST;
-		public float speed;
+		public float weaponWeight = 300.0f;
+		public float speed = 2.0f;
 
 	}
 	
@@ -58,10 +59,32 @@ public class TopDown2DPlayer : MonoBehaviour {
 	public class KeyboardInput {
 		public Vector2 mousePos;
 		public Vector2 moveAxes;
+		public bool shieldUp;
+		public bool aiming;
 	}
 
 	public KeyboardInput input;
+
+	[System.Serializable]
+	public class GUIControls
+	{
+		public bool showUI = true;
+		public Texture2D letterbox;
+		[Range(3.0f,8.0f)]
+		public float range = 5.0f;
+		[Range(0.0f, 1.0f)]
+		public float cutoff = 1.0f;
+	}
+
+	public GUIControls guiControls;
+
 	Camera cam;
+
+	/*
+	<<<COMBAT>>>
+	*/
+
+
 
 	/*
 	====================================================================================================
@@ -73,13 +96,35 @@ public class TopDown2DPlayer : MonoBehaviour {
 		cam = Camera.main;
 		spriteRenderer = GetComponent<SpriteRenderer> ();
 		animator = GetComponent<Animator> ();
+		rigidbody = GetComponent<Rigidbody2D> ();
+		InitGUILetterbox ();
+		InitPhysics ();
+
+	}
+
+	void InitPhysics() {
+
+		//rigidbody.drag = 0.03f * movement.weaponWeight;
+
+	}
+
+	void InitGUILetterbox() {
+		guiControls.letterbox = new Texture2D (1, 1);
+		guiControls.letterbox.SetPixel (0, 0, new Color(0.0f,0.0f,0.0f,0.5f));
+		guiControls.letterbox.Apply ();
+
 	}
 
 	void Update() {
 		UpdateInput ();
-		Move ();
 		Rotate ();
+		Attack ();
 		Animate ();
+	}
+
+	void FixedUpdate() {
+		Move ();
+
 	}
 
 	/*
@@ -97,6 +142,16 @@ public class TopDown2DPlayer : MonoBehaviour {
 			Input.GetAxisRaw ("Horizontal"),
 			Input.GetAxisRaw ("Vertical")
 		);
+
+		input.aiming = Input.GetButton ("Fire2");
+		input.shieldUp = Input.GetButton ("Action1");
+	}
+
+	void Attack() {
+		if (Input.GetButtonDown ("Fire1")) {
+			Vector3 jerk = (new Vector3(input.mousePos.x, input.mousePos.y, 0.0f) - (transform.position)).normalized * movement.weaponWeight;
+			rigidbody.AddForce (jerk);
+		}
 	}
 		
 	/*
@@ -104,7 +159,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 	Move the player based on axis input
 	*/
 	void Move() {
-		transform.position += new Vector3(input.moveAxes.x, input.moveAxes.y, 0.0f) * movement.speed * Time.deltaTime;
+		transform.position += new Vector3(input.moveAxes.x, input.moveAxes.y, 0.0f) * movement.speed * 0.02f;
 	}
 
 	/*
@@ -113,7 +168,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 	*/
 	void Rotate() {
 
-		if (Input.GetButton ("Fire1")) {
+		if (input.aiming || Input.GetButtonDown("Fire1")) {
 			Vector2 relativePoint = new Vector2 (transform.position.x - input.mousePos.x, transform.position.y - input.mousePos.y);
 			float angle = (180.0f + Mathf.Atan2 (relativePoint.y, relativePoint.x) * Mathf.Rad2Deg);
 			float cardinal = (int)Mathf.Round (angle / 45.0f);
@@ -130,6 +185,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 	*/
 	void Animate() {
 		animator.SetFloat ("cardinal", Direction2Cardinal(movement.direction));
+		spriteRenderer.color = (input.shieldUp ? Color.blue : Color.white);
 	}
 
 
@@ -237,6 +293,26 @@ public class TopDown2DPlayer : MonoBehaviour {
 			return Color.gray;
 		case Direction.SOUTHEAST:
 			return Color.white;
+
+		}
+
+	}
+
+	void OnGUI() {
+
+
+		guiControls.cutoff = Mathf.Lerp(guiControls.cutoff, (input.aiming ? 1 : 0), 5.0f * Time.deltaTime);
+
+		//SHIELD LETTERBOXING
+		Rect rect = new Rect(0,0,Screen.width, (Screen.height/guiControls.range) * guiControls.cutoff);
+		GUI.DrawTexture (rect, guiControls.letterbox);
+		rect.Set(0,Screen.height - (Screen.height/guiControls.range) * guiControls.cutoff, Screen.width, (Screen.height/guiControls.range) * guiControls.cutoff);
+		GUI.DrawTexture (rect, guiControls.letterbox);
+
+
+		if (guiControls.showUI) {
+
+			GUI.Label (new Rect (32, 32, 128, 32), input.shieldUp? "SHIELD UP" : "SHIELD DOWN");
 
 		}
 

@@ -4,10 +4,14 @@ using UnityEngine;
 
 public class SimpleFollow : MonoBehaviour {
 
-	public Transform target;
+	public float adaptionSpeed = 5.0f;
+	public Transform targetTransform;
 
-	void Update() {
-		transform.position = new Vector3(target.position.x, transform.position.y, target.position.z);
+	void FixedUpdate() {
+		Vector3 targetPosition = new Vector3(targetTransform.position.x, targetTransform.position.y, transform.position.z);
+
+		transform.position = Vector3.Lerp (transform.position, targetPosition, Time.deltaTime * adaptionSpeed);
+	
 	}
 
 }
