@@ -32,8 +32,17 @@ public class BoatController : MonoBehaviour {
 		public float turnSpeed = 0.6f;
 		public float acceleration = 5.5f;
 		public float waterFriction = 5f;
-	
+	    public float sailSpeed = 1f;
+
 	}
+
+    [System.Serializable]
+    public class Sail {
+        [Range(0, 3.14f)]
+        public float angle;
+        [Range(0,100)]
+        public float strength = 0.0f;
+    }
 
 	/*
 	WIND
@@ -44,13 +53,14 @@ public class BoatController : MonoBehaviour {
 
 		[Range(-3.14f,3.14f)]
 		public float angle = 0.0f;
-		public float strength = 3.0f;
+		public float strength = 0.0f;
 		public bool visualizeForces = true;
 
 	}
 
 
 	public Movement movement;
+    public Sail sail;
 	public Wind wind;
 
 	// Private vars for movement.
@@ -58,14 +68,14 @@ public class BoatController : MonoBehaviour {
 	private float turnInput;
 
 	//COMPONENTS
-	Rigidbody rigidbody;
+	Rigidbody2D rigidbody;
 
 	//INPUT
 	Vector2 input;
 
 	void Start() {
 		//Init COMPONENTS
-		rigidbody = GetComponent<Rigidbody> ();
+		rigidbody = GetComponent<Rigidbody2D> ();
 	}
 
 
@@ -90,8 +100,9 @@ public class BoatController : MonoBehaviour {
 		float turnAmount = turnInput * movement.turnSpeed * Time.deltaTime * rigidbody.velocity.sqrMagnitude;
 		//Turn the ship! Using transform.euler angles rather than Rigidbody in order to preserve velocity. Not entirely realistic,
 		//but a fuckton easier to control.
-		transform.eulerAngles = new Vector3 (transform.eulerAngles.x, transform.eulerAngles.y + turnAmount, transform.eulerAngles.z);
-	}
+        //We have to subtract because clockwise is -angle around z axis
+		transform.Rotate(new Vector3(0, 0, transform.rotation.z - turnAmount));
+    }
 
 	/*
 	MOVEMENT PHYSICS
@@ -114,7 +125,7 @@ public class BoatController : MonoBehaviour {
 	void CalcVelocity() {
 
 		//Init velocity and windforce vars
-		Vector3 velocity = transform.forward * speed * Time.deltaTime;
+		Vector3 velocity = transform.up * speed * Time.deltaTime;
 		Vector3 windForce = new Vector3 (
 			                    Mathf.Sin (wind.angle) * wind.strength * Mathf.Clamp01 (rigidbody.velocity.sqrMagnitude), 0.0f, 
 			                    Mathf.Cos (wind.angle) * wind.strength * Mathf.Clamp01 (rigidbody.velocity.sqrMagnitude)
@@ -140,6 +151,7 @@ public class BoatController : MonoBehaviour {
 	void GetInput() {
 		input.x = Input.GetAxisRaw ("Horizontal");
 		input.y = Input.GetAxisRaw ("Vertical");
+        print(input.x);
 	}
 
 }
