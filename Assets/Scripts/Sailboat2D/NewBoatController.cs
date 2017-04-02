@@ -53,6 +53,9 @@ public class NewBoatController : MonoBehaviour {
     private float sailInput;
     private float turnInput;
 
+    private bool docked = false;
+    private Dock dock;
+
     Rigidbody2D rigidbody;
     Vector2 input;
 
@@ -62,11 +65,40 @@ public class NewBoatController : MonoBehaviour {
 
 
     void Update() {
-        GetInput();
-        CalcSail();
-        TurnPhysics();
-        MovementPhysics();
-        CalcVelocity();
+        print(sail.GetAngle());
+        Vector3 sailLine = new Vector3(Mathf.Cos(this.sail.GetAngle() * QUICKRAD), Mathf.Sin(this.sail.GetAngle() * QUICKRAD), 0);
+        Debug.DrawLine(-sailLine + transform.position, sailLine + transform.position, Color.magenta);
+        if (docked) {
+            if (Input.GetKeyDown("e")){
+                docked = false;
+            }
+            LerpToDock();
+        }
+        else {
+            if (Input.GetKeyDown("e")) {
+                if (dock != null) {
+                    docked = true;
+                }
+            }
+            GetInput();
+            CalcSail();
+            TurnPhysics();
+            MovementPhysics();
+            CalcVelocity();
+        }
+       
+    }
+
+    void OnTriggerEnter2D(Collider2D other) {
+        if (other.gameObject.CompareTag("Dock")) {
+            dock = other.gameObject.GetComponent<Dock>();
+        }
+    }
+
+    void OnTriggerExit2D(Collider2D other) {
+        if (other.gameObject.CompareTag("Dock")) {
+            dock = null;
+        }
     }
 
     private float AngleDifference(float two, float one) {
@@ -80,12 +112,31 @@ public class NewBoatController : MonoBehaviour {
         return result;
     }
 
-    private void CalcSail() {
-        Vector3 sailLine = new Vector3(Mathf.Cos(this.sail.GetAngle() * QUICKRAD), Mathf.Sin(this.sail.GetAngle() * QUICKRAD), 0);
-        Debug.DrawLine(-sailLine + transform.position, sailLine + transform.position, Color.magenta);
+    private void LerpToDock() {
+        if (dock != null) {
+            rigidbody.velocity = Vector2.zero;
+            speed = 0;
+            if ((transform.position - dock.boatPosition.position).sqrMagnitude > .01) {
+                transform.position = Vector3.Lerp(transform.position, dock.boatPosition.position, 1.0f * Time.deltaTime);
+            }
+            float angleDifference = AngleDifference(transform.eulerAngles.z, dock.boatPosition.eulerAngles.z);
+            if (angleDifference > .5f || angleDifference < -.5f) {
+                float z = Mathf.Lerp(dock.boatPosition.eulerAngles.z, angleDifference, 1.0f * Time.deltaTime);
+                transform.Rotate(0,0,-z);
+            }
+            float sailAngleDifference = AngleDifference(sail.GetAngle(), dock.boatPosition.eulerAngles.z);
+            if (sailAngleDifference > .5f || sailAngleDifference < -.5f){
+                float rotation = Mathf.Lerp(dock.boatPosition.eulerAngles.z, sailAngleDifference, 1.0f * Time.deltaTime);
+                sail.RotateSail(-rotation);
+            }
+            turnInput = Mathf.LerpAngle(turnInput, sail.GetAngle(), 1.0f * Time.deltaTime);
 
+        }
+
+    }
+
+    private void CalcSail() {
         float angleDifference = AngleDifference(transform.rotation.eulerAngles.z, sail.GetAngle());
-        print(angleDifference);
         if (angleDifference > 45 && input.x > 0) {
             input.x = 0;
         }
