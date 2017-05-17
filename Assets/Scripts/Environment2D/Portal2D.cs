@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Portal : MonoBehaviour {
+public class Portal2D : MonoBehaviour {
 
-	public Portal otherPortal;
+	public Portal2D otherPortal;
 	public TopDown2DPlayer.Direction facingDirection;
+	public bool drawConnection = false;
 
 	[Range(0.0f, 100.0f)]
 	private float letterboxFillPercent = 0.0f;
@@ -23,10 +24,19 @@ public class Portal : MonoBehaviour {
 	}
 
 	void Update() {
-
 		CheckInPortal ();
 		Fade ();
 		StartCoroutine (Transport());
+
+	}
+	void OnDrawGizmos() {
+
+		if (drawConnection) {
+			otherPortal.drawConnection = false;
+			Gizmos.color = Color.green;
+			Gizmos.DrawLine (transform.position, otherPortal.transform.position);
+
+		}
 
 	}
 
@@ -34,10 +44,9 @@ public class Portal : MonoBehaviour {
 		player = GameObject.FindGameObjectWithTag("Player").GetComponent<TopDown2DPlayer> ();
 	}
 
+
 	void CheckInPortal() {
 		if (playerInPortal && !fading && !transporting) {
-
-			Debug.Log ("[E] Advance");
 
 			if (Input.GetKeyDown (KeyCode.E)) {
 
@@ -63,7 +72,7 @@ public class Portal : MonoBehaviour {
 
 	IEnumerator Transport() {
 		if (transporting && player != null) {
-			player.transform.position = otherPortal.transform.position + (2.0f * PortalOffsetFromDirection (otherPortal.facingDirection));
+			player.transform.position = otherPortal.transform.position + (1.0f * PortalOffsetFromDirection (otherPortal.facingDirection));
 			player.movement.direction = otherPortal.facingDirection;
 			yield return new WaitForSeconds(1.0f);
 			fading = false;
@@ -123,6 +132,10 @@ public class Portal : MonoBehaviour {
 	}
 
 	void OnGUI() {
+
+		if (playerInPortal) {
+			GUI.Label (new Rect (Screen.width/2, Screen.height - 30, 200, 50), "[E] Advance");
+		}
 
 		letterboxRect.width = (letterboxFillPercent * 0.01f * Screen.width);
 		GUI.DrawTexture (letterboxRect, letterbox);

@@ -13,7 +13,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 	/*
 	<<<COMPONENTS>>>
 	*/
-	Rigidbody2D rigidbody;
+	Rigidbody2D rb2D;
 	SpriteRenderer spriteRenderer;
 	Animator animator;
 
@@ -96,7 +96,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 		cam = Camera.main;
 		spriteRenderer = GetComponent<SpriteRenderer> ();
 		animator = GetComponent<Animator> ();
-		rigidbody = GetComponent<Rigidbody2D> ();
+		rb2D = GetComponent<Rigidbody2D> ();
 		InitGUILetterbox ();
 		InitPhysics ();
 
@@ -150,7 +150,7 @@ public class TopDown2DPlayer : MonoBehaviour {
 	void Attack() {
 		if (Input.GetButtonDown ("Fire1")) {
 			Vector3 jerk = (new Vector3(input.mousePos.x, input.mousePos.y, 0.0f) - (transform.position)).normalized * movement.weaponWeight;
-			rigidbody.AddForce (jerk);
+			rb2D.AddForce (jerk);
 		}
 	}
 		
